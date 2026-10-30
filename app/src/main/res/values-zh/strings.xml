@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">X 光手</string>
+    <string name="loading">准备中…</string>
+
+    <string name="welcome_line1">把双手举到眼前，看一块骨头捏一下，它会念出名字</string>
+    <string name="welcome_line2">没开手部追踪或拿着手柄？用演示手也能学</string>
+    <string name="use_my_hands">用我的手</string>
+    <string name="use_demo">用演示手</string>
+
+    <string name="mode_explore">认骨</string>
+    <string name="mode_quiz">测验</string>
+    <string name="cd_mute">念名字</string>
+    <string name="cd_more">更多</string>
+    <string name="cd_settings">设置</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_speak">再念一次</string>
+
+    <string name="menu_demo">用演示手</string>
+    <string name="menu_mine">用自己的手</string>
+    <string name="menu_marker">在地上放标记</string>
+    <string name="place_marker">放标记</string>
+    <string name="menu_recall">面板叫回面前</string>
+    <string name="cancel_marker">取消</string>
+    <string name="bring_to_marker">移到标记处</string>
+
+    <string name="seek_title">把手举到眼前，掌心手背都行</string>
+    <string name="hint_pick">看一块骨头，捏一下</string>
+    <string name="group_carpal">腕骨 8</string>
+    <string name="group_metacarpal">掌骨 5</string>
+    <string name="group_phalanx">指骨 14</string>
+    <string name="group_carpal_short">腕骨</string>
+    <string name="group_metacarpal_short">掌骨</string>
+    <string name="group_phalanx_short">指骨</string>
+    <string name="mnemonic_metacarpal">从拇指起数第 1 到第 5 掌骨</string>
+    <string name="mnemonic_phalanx">近节、中节、远节；拇指没有中节</string>
+    <string name="follow_me">跟着做</string>
+    <string name="carpal_zoom">腕骨放大</string>
+    <string name="pose_open">张开</string>
+    <string name="pose_fist">握拳</string>
+    <string name="pose_pinch">对掌</string>
+    <string name="pose_flip">翻面</string>
+
+    <string name="status_both">右手 ✓  左手 ✓</string>
+    <string name="status_right_only">只看到右手：用它自己捏一下也能点名</string>
+    <string name="status_left_only">只看到左手：用它自己捏一下也能点名</string>
+    <string name="status_none">还没看到手</string>
+    <string name="status_demo">演示手 · 摇杆左右转动 · 按住可拖动</string>
+    <string name="status_no_marker">先放标记：手柄指着地面扣扳机，或看着地面捏一下</string>
+    <string name="status_placing">手柄指着地面扣扳机，或看着地面捏一下</string>
+
+    <string name="follow_step">第 %1$d / 3 步</string>
+    <string name="follow_1">慢慢握拳</string>
+    <string name="follow_2">张开</string>
+    <string name="follow_3">拇指去碰小指（对掌）</string>
+    <string name="follow_hint">看你手上发琥珀色的骨头怎么动</string>
+    <string name="next">下一个</string>
+    <string name="end">结束</string>
+
+    <string name="quiz_intro">10 题，看你记住了多少</string>
+    <string name="best">最好 %1$d / 10</string>
+    <string name="best_none">还没有成绩</string>
+    <string name="start">开始</string>
+    <string name="locate">点出：%1$s</string>
+    <string name="identify">手上闪的这块是？</string>
+    <string name="right_answer">对了</string>
+    <string name="wrong_answer">是 %1$s</string>
+    <string name="all_right">全对！</string>
+    <string name="review_wrong">看错题</string>
+    <string name="again">再来一次</string>
+    <string name="review_n">错题 %1$d / %2$d</string>
+    <string name="back_to_result">回结果</string>
+    <string name="paused">手不见了，举起来继续</string>
+    <string name="continue_demo">用演示手继续</string>
+
+    <string name="unsupported_title">这台设备现在拿不到手部追踪</string>
+    <string name="unsupported_reason">原因：%1$s</string>
+    <string name="retry">再试一次</string>
+
+    <string name="settings">设置</string>
+    <string name="lang">语言</string>
+    <string name="lang_zh">中文</string>
+    <string name="lang_en">English</string>
+    <string name="lang_both">中英</string>
+    <string name="look">外观</string>
+    <string name="look_ivory">骨白</string>
+    <string name="look_xray">X 光蓝</string>
+    <string name="clear">清除测验记录</string>
+    <string name="clear_confirm">清除最好成绩和历史？</string>
+    <string name="clear_yes">清除</string>
+    <string name="cancel">取消</string>
+    <string name="about">关于</string>
+    <string name="about_text">版本 %1$s。骨骼来自真人 CT 数据，仅供学习示意，不能用于诊断，不含籽骨。手部骨骼模型：NIH 3D 3DPX-016815，作者 My Segmenter，CC BY 4.0；Embodit 拆分、减面并重设轴向。</string>
+
+    <string name="label_proximal">近节</string>
+    <string name="label_middle">中节</string>
+    <string name="label_distal">远节</string>
+    <string name="label_thumb_two">拇指只有两节</string>
+</resources>

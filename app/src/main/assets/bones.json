@@ -1,0 +1,575 @@
+{
+ "bones": [
+  {
+   "id": "scaphoid",
+   "group": "carpal",
+   "zh": "舟骨",
+   "en": "Scaphoid",
+   "factZh": "腕骨里最常骨折的一块，摔倒时手掌撑地最容易伤到它",
+   "factEn": "The most commonly fractured carpal bone, often from falling on an outstretched hand",
+   "subgroup": "proximalRow",
+   "bounds": {
+    "min": [
+     -0.00996,
+     -0.01064,
+     -0.01085
+    ],
+    "max": [
+     0.01031,
+     0.00915,
+     0.01312
+    ]
+   }
+  },
+  {
+   "id": "lunate",
+   "group": "carpal",
+   "zh": "月骨",
+   "en": "Lunate",
+   "factZh": "侧面像一弯新月，所以叫月骨",
+   "factEn": "Named for its crescent-moon shape",
+   "subgroup": "proximalRow",
+   "bounds": {
+    "min": [
+     -0.00915,
+     -0.00707,
+     -0.0081
+    ],
+    "max": [
+     0.00854,
+     0.00879,
+     0.00897
+    ]
+   }
+  },
+  {
+   "id": "triquetrum",
+   "group": "carpal",
+   "zh": "三角骨",
+   "en": "Triquetrum",
+   "factZh": "近排小指侧，形状近似三棱锥",
+   "factEn": "On the little-finger side of the first row, roughly pyramid-shaped",
+   "subgroup": "proximalRow",
+   "bounds": {
+    "min": [
+     -0.00761,
+     -0.00816,
+     -0.0093
+    ],
+    "max": [
+     0.00711,
+     0.00777,
+     0.00865
+    ]
+   }
+  },
+  {
+   "id": "pisiform",
+   "group": "carpal",
+   "zh": "豌豆骨",
+   "en": "Pisiform",
+   "factZh": "最小的腕骨，叠在三角骨的掌侧，长在肌腱里；翻过手掌才看得到",
+   "factEn": "The smallest carpal bone, sitting on the palm side of the triquetrum inside a tendon; turn your palm up to see it",
+   "subgroup": "proximalRow",
+   "bounds": {
+    "min": [
+     -0.00609,
+     -0.0064,
+     -0.00684
+    ],
+    "max": [
+     0.00568,
+     0.00639,
+     0.00661
+    ]
+   }
+  },
+  {
+   "id": "trapezium",
+   "group": "carpal",
+   "zh": "大多角骨",
+   "en": "Trapezium",
+   "factZh": "和第 1 掌骨组成马鞍形关节，拇指才能转过来和其他手指对捏",
+   "factEn": "Forms the saddle joint with the first metacarpal, which lets your thumb oppose the other fingers",
+   "subgroup": "distalRow",
+   "bounds": {
+    "min": [
+     -0.00883,
+     -0.00889,
+     -0.01233
+    ],
+    "max": [
+     0.00919,
+     0.00968,
+     0.01013
+    ]
+   }
+  },
+  {
+   "id": "trapezoid",
+   "group": "carpal",
+   "zh": "小多角骨",
+   "en": "Trapezoid",
+   "factZh": "夹在大多角骨和头状骨之间，托着第 2 掌骨",
+   "factEn": "Wedged between the trapezium and capitate, supporting the second metacarpal",
+   "subgroup": "distalRow",
+   "bounds": {
+    "min": [
+     -0.00599,
+     -0.00624,
+     -0.01029
+    ],
+    "max": [
+     0.00748,
+     0.00597,
+     0.0101
+    ]
+   }
+  },
+  {
+   "id": "capitate",
+   "group": "carpal",
+   "zh": "头状骨",
+   "en": "Capitate",
+   "factZh": "最大的腕骨，在腕骨团正中间，托着中指的掌骨",
+   "factEn": "The largest carpal bone, at the center of the wrist, supporting the middle-finger metacarpal",
+   "subgroup": "distalRow",
+   "bounds": {
+    "min": [
+     -0.00811,
+     -0.01348,
+     -0.0095
+    ],
+    "max": [
+     0.00755,
+     0.01083,
+     0.00957
+    ]
+   }
+  },
+  {
+   "id": "hamate",
+   "group": "carpal",
+   "zh": "钩骨",
+   "en": "Hamate",
+   "factZh": "在小指一侧的手腕根部，掌侧有一个钩状突起（钩骨钩）",
+   "factEn": "At the little-finger side of the wrist, with a hook-like projection on the palm side",
+   "subgroup": "distalRow",
+   "bounds": {
+    "min": [
+     -0.00928,
+     -0.01245,
+     -0.0117
+    ],
+    "max": [
+     0.00733,
+     0.01065,
+     0.01425
+    ]
+   }
+  },
+  {
+   "id": "mc1",
+   "group": "metacarpal",
+   "zh": "第 1 掌骨（拇指）",
+   "en": "1st metacarpal (thumb)",
+   "factZh": "最短最粗的掌骨，活动最灵活",
+   "factEn": "The shortest, thickest and most mobile metacarpal",
+   "subgroup": "",
+   "bounds": {
+    "min": [
+     -0.01119,
+     -0.00328,
+     -0.01065
+    ],
+    "max": [
+     0.01029,
+     0.04867,
+     0.00919
+    ]
+   }
+  },
+  {
+   "id": "mc2",
+   "group": "metacarpal",
+   "zh": "第 2 掌骨（示指）",
+   "en": "2nd metacarpal (index)",
+   "factZh": "最长的掌骨",
+   "factEn": "The longest metacarpal",
+   "subgroup": "",
+   "bounds": {
+    "min": [
+     -0.00827,
+     -0.00457,
+     -0.00839
+    ],
+    "max": [
+     0.01159,
+     0.06942,
+     0.00962
+    ]
+   }
+  },
+  {
+   "id": "mc3",
+   "group": "metacarpal",
+   "zh": "第 3 掌骨（中指）",
+   "en": "3rd metacarpal (middle)",
+   "factZh": "握拳时最突出的那个指节就是它的头",
+   "factEn": "Its head is the most prominent knuckle when you make a fist",
+   "subgroup": "",
+   "bounds": {
+    "min": [
+     -0.00831,
+     -0.00505,
+     -0.0089
+    ],
+    "max": [
+     0.00929,
+     0.06506,
+     0.00953
+    ]
+   }
+  },
+  {
+   "id": "mc4",
+   "group": "metacarpal",
+   "zh": "第 4 掌骨（环指）",
+   "en": "4th metacarpal (ring)",
+   "factZh": "握拳时比第 2、3 掌骨能多动一点",
+   "factEn": "Moves a little more than the 2nd and 3rd when you make a fist",
+   "subgroup": "",
+   "bounds": {
+    "min": [
+     -0.00739,
+     -0.00343,
+     -0.00855
+    ],
+    "max": [
+     0.00747,
+     0.05584,
+     0.00746
+    ]
+   }
+  },
+  {
+   "id": "mc5",
+   "group": "metacarpal",
+   "zh": "第 5 掌骨（小指）",
+   "en": "5th metacarpal (little)",
+   "factZh": "拳击时最容易骨折的掌骨（「拳击手骨折」）",
+   "factEn": "The metacarpal most often broken by punching (\"boxer's fracture\")",
+   "subgroup": "",
+   "bounds": {
+    "min": [
+     -0.00765,
+     -0.00363,
+     -0.00819
+    ],
+    "max": [
+     0.0073,
+     0.05215,
+     0.00763
+    ]
+   }
+  },
+  {
+   "id": "pp1",
+   "group": "phalanx",
+   "zh": "拇指·近节指骨",
+   "en": "Thumb · proximal phalanx",
+   "factZh": "拇指只有两节指骨：近节和远节",
+   "factEn": "The thumb has only two phalanges: proximal and distal",
+   "subgroup": "proximal",
+   "bounds": {
+    "min": [
+     -0.00751,
+     -0.00179,
+     -0.00782
+    ],
+    "max": [
+     0.00721,
+     0.03221,
+     0.0081
+    ]
+   }
+  },
+  {
+   "id": "dp1",
+   "group": "phalanx",
+   "zh": "拇指·远节指骨",
+   "en": "Thumb · distal phalanx",
+   "factZh": "指甲就长在远节指骨背面",
+   "factEn": "The nail sits on the back of the distal phalanx",
+   "subgroup": "distal",
+   "bounds": {
+    "min": [
+     -0.00585,
+     -0.00147,
+     -0.00735
+    ],
+    "max": [
+     0.00648,
+     0.02198,
+     0.00762
+    ]
+   }
+  },
+  {
+   "id": "pp2",
+   "group": "phalanx",
+   "zh": "示指·近节指骨",
+   "en": "Index · proximal phalanx",
+   "factZh": "每根手指最长的一节就是近节",
+   "factEn": "The proximal phalanx is the longest segment of each finger",
+   "subgroup": "proximal",
+   "bounds": {
+    "min": [
+     -0.00975,
+     -0.00254,
+     -0.00702
+    ],
+    "max": [
+     0.00895,
+     0.04168,
+     0.00626
+    ]
+   }
+  },
+  {
+   "id": "mp2",
+   "group": "phalanx",
+   "zh": "示指·中节指骨",
+   "en": "Index · middle phalanx",
+   "factZh": "两端各连一个指间关节：近侧和远侧指间关节",
+   "factEn": "Both finger joints (PIP and DIP) sit at its two ends",
+   "subgroup": "middle",
+   "bounds": {
+    "min": [
+     -0.007,
+     -0.00141,
+     -0.00494
+    ],
+    "max": [
+     0.00657,
+     0.02413,
+     0.00508
+    ]
+   }
+  },
+  {
+   "id": "dp2",
+   "group": "phalanx",
+   "zh": "示指·远节指骨",
+   "en": "Index · distal phalanx",
+   "factZh": "末端有一圈粗糙的骨面，托着指腹",
+   "factEn": "Ends in a rough tuft that supports the fingertip pad",
+   "subgroup": "distal",
+   "bounds": {
+    "min": [
+     -0.00411,
+     -0.00116,
+     -0.00314
+    ],
+    "max": [
+     0.00536,
+     0.0167,
+     0.0043
+    ]
+   }
+  },
+  {
+   "id": "pp3",
+   "group": "phalanx",
+   "zh": "中指·近节指骨",
+   "en": "Middle · proximal phalanx",
+   "factZh": "全手最长的指骨",
+   "factEn": "The longest phalanx in the hand",
+   "subgroup": "proximal",
+   "bounds": {
+    "min": [
+     -0.00979,
+     -0.00316,
+     -0.00726
+    ],
+    "max": [
+     0.0089,
+     0.04581,
+     0.00732
+    ]
+   }
+  },
+  {
+   "id": "mp3",
+   "group": "phalanx",
+   "zh": "中指·中节指骨",
+   "en": "Middle · middle phalanx",
+   "factZh": "四根手指各有一节中节指骨，拇指没有",
+   "factEn": "Each finger has a middle phalanx; the thumb does not",
+   "subgroup": "middle",
+   "bounds": {
+    "min": [
+     -0.00698,
+     -0.00172,
+     -0.0056
+    ],
+    "max": [
+     0.00734,
+     0.02932,
+     0.0057
+    ]
+   }
+  },
+  {
+   "id": "dp3",
+   "group": "phalanx",
+   "zh": "中指·远节指骨",
+   "en": "Middle · distal phalanx",
+   "factZh": "远节指骨只能弯，几乎不能左右摆",
+   "factEn": "Distal phalanges bend but barely move side to side",
+   "subgroup": "distal",
+   "bounds": {
+    "min": [
+     -0.00512,
+     -0.00113,
+     -0.0034
+    ],
+    "max": [
+     0.0053,
+     0.01871,
+     0.00428
+    ]
+   }
+  },
+  {
+   "id": "pp4",
+   "group": "phalanx",
+   "zh": "环指·近节指骨",
+   "en": "Ring · proximal phalanx",
+   "factZh": "环指就是无名指",
+   "factEn": "The ring finger is also called the fourth finger",
+   "subgroup": "proximal",
+   "bounds": {
+    "min": [
+     -0.00857,
+     -0.00232,
+     -0.00674
+    ],
+    "max": [
+     0.00832,
+     0.04165,
+     0.00659
+    ]
+   }
+  },
+  {
+   "id": "mp4",
+   "group": "phalanx",
+   "zh": "环指·中节指骨",
+   "en": "Ring · middle phalanx",
+   "factZh": "比中指的中节指骨短一点",
+   "factEn": "A little shorter than the middle finger's middle phalanx",
+   "subgroup": "middle",
+   "bounds": {
+    "min": [
+     -0.00654,
+     -0.00161,
+     -0.00502
+    ],
+    "max": [
+     0.00692,
+     0.02847,
+     0.00546
+    ]
+   }
+  },
+  {
+   "id": "dp4",
+   "group": "phalanx",
+   "zh": "环指·远节指骨",
+   "en": "Ring · distal phalanx",
+   "factZh": "它和中节之间是远侧指间关节——只弯指尖时动的就是这里",
+   "factEn": "The DIP joint between it and the middle phalanx is what bends when you curl just the fingertip",
+   "subgroup": "distal",
+   "bounds": {
+    "min": [
+     -0.00449,
+     -0.00127,
+     -0.00354
+    ],
+    "max": [
+     0.00634,
+     0.01921,
+     0.00492
+    ]
+   }
+  },
+  {
+   "id": "pp5",
+   "group": "phalanx",
+   "zh": "小指·近节指骨",
+   "en": "Little · proximal phalanx",
+   "factZh": "小指的骨头都是同名骨里最细的",
+   "factEn": "The little finger's bones are the slimmest of their kind",
+   "subgroup": "proximal",
+   "bounds": {
+    "min": [
+     -0.00735,
+     -0.00178,
+     -0.00677
+    ],
+    "max": [
+     0.00741,
+     0.03239,
+     0.00574
+    ]
+   }
+  },
+  {
+   "id": "mp5",
+   "group": "phalanx",
+   "zh": "小指·中节指骨",
+   "en": "Little · middle phalanx",
+   "factZh": "最短的中节指骨",
+   "factEn": "The shortest middle phalanx",
+   "subgroup": "middle",
+   "bounds": {
+    "min": [
+     -0.00537,
+     -0.00117,
+     -0.00447
+    ],
+    "max": [
+     0.006,
+     0.01931,
+     0.00473
+    ]
+   }
+  },
+  {
+   "id": "dp5",
+   "group": "phalanx",
+   "zh": "小指·远节指骨",
+   "en": "Little · distal phalanx",
+   "factZh": "全手最小的长骨之一",
+   "factEn": "One of the smallest long bones in the hand",
+   "subgroup": "distal",
+   "bounds": {
+    "min": [
+     -0.00395,
+     -0.00107,
+     -0.00271
+    ],
+    "max": [
+     0.00455,
+     0.01856,
+     0.00429
+    ]
+   }
+  }
+ ],
+ "mnemonic": {
+  "zh": "舟月三角豆，大小头状钩",
+  "en": "So Long To Pinky, Here Comes The Thumb（近排拇指侧起：舟 月 三角 豆；远排小指侧起：钩 头状 小多角 大多角）"
+ }
+}
