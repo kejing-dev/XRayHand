@@ -20,7 +20,7 @@
     <string name="menu_mine">Use my own hands</string>
     <string name="menu_marker">Place a marker on the floor</string>
     <string name="place_marker">Place marker</string>
-    <string name="menu_recall">Bring the panel in front of me</string>
+    <string name="menu_recall">Reopen the panel</string>
     <string name="cancel_marker">Cancel</string>
     <string name="bring_to_marker">Move to marker</string>
 
@@ -90,10 +90,26 @@
     <string name="clear_yes">Clear</string>
     <string name="cancel">Cancel</string>
     <string name="about">About</string>
-    <string name="about_text">Version %1$s. The bones are from a real person\'s CT scan, for learning only, not for diagnosis; sesamoid bones are not included. Hand bone model: NIH 3D 3DPX-016815 by My Segmenter, CC BY 4.0; split, decimated and re-origined by Embodit.</string>
+    <string name="about_text">Version %1$s. The bones are from a real person\'s CT scan, for learning only, not for diagnosis; sesamoid bones are not included. Hand bone model: NIH 3D 3DPX-016815 by My Segmenter, CC BY 4.0; split, decimated and re-origined for this app.</string>
 
     <string name="label_proximal">Proximal</string>
     <string name="label_middle">Middle</string>
     <string name="label_distal">Distal</string>
     <string name="label_thumb_two">Thumb: only two</string>
+    <!-- v0.1.4: system window (TabBar pages, settings exit, D9 level gate, D44 restart confirm) -->
+    <string name="tab_explore">Bones</string>
+    <string name="tab_quiz">Quiz</string>
+    <string name="open_panel">Open panel</string>
+    <string name="level_hint">Look straight ahead\nand the panel opens</string>
+    <string name="recall_note">The panel closes and opens again where you look</string>
+    <string name="exit_app">Exit app</string>
+    <string name="exit_confirm">Exit X-ray Hand?</string>
+    <string name="exit_yes">Exit</string>
+    <string name="quiz_restart">Restart</string>
+    <string name="restart_confirm">Drop this round and start over?</string>
+    <string name="restart_keep">Keep going</string>
+    <string name="restart_yes">Start over</string>
+    <string name="quiz_rules">6 times find a bone on your hand, 4 times name the flashing one. Carpals, metacarpals and phalanges all come up.</string>
+    <string name="locate_hint">Find it on your hand, look at it and pinch</string>
+    <string name="recent">Recent %1$s</string>
 </resources>

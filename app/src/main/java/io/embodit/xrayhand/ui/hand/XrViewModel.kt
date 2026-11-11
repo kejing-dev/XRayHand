@@ -2,7 +2,6 @@ package io.embodit.xrayhand.ui.hand
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.embodit.xrayhand.domain.Answer
 import io.embodit.xrayhand.domain.BoneCatalog
@@ -47,6 +46,10 @@ class XrViewModel(
     /** How long a quiz answer's feedback shows (S13); debug `feedback hold` keeps it up for QA screenshots. */
     var feedbackMs = FEEDBACK_MS
 
+    /** Set by the Stage while it is up: "重新打开面板" and the confirmed exit (the window has no navigator of its own). */
+    var onRecall: (() -> Unit)? = null
+    var onExit: (() -> Unit)? = null
+
     /** Debug `next`: leaves the feedback now. */
     fun debugNext() = advance()
 
@@ -71,7 +74,11 @@ class XrViewModel(
                     s.copy(welcome = false, source = Source.DEMO, menuOpen = false, unsupported = null, follow = null, selected = s.selected?.takeIf { it.hand == HandId.DEMO }, quiz = q, prefs = s.prefs.copy(welcomed = true))
                 }
                 XrEvent.UseMine -> s.copy(source = Source.LIVE, menuOpen = false, selected = null, demoPose = io.embodit.xrayhand.domain.PoseName.OPEN)
-                XrEvent.RecallPanel -> s.copy(menuOpen = false, panelRecallTick = s.panelRecallTick + 1)
+                XrEvent.RecallPanel -> {
+                    // v0.1.4: the system window is closed and opened again once the head is level (D9 / D44)
+                    onRecall?.invoke()
+                    s.copy(menuOpen = false)
+                }
                 XrEvent.PlaceMarker -> s.copy(placing = !s.placing, menuOpen = false)
                 XrEvent.MarkerPlaced -> {
                     XrLog.i("MARKER placed (waiting for move-to-marker)")
@@ -94,7 +101,16 @@ class XrViewModel(
                 XrEvent.FollowEnd -> s.copy(follow = null)
                 is XrEvent.DemoPose -> s.copy(demoPose = e.pose)
                 is XrEvent.ModeChanged -> modeChanged(s, e.mode)
-                XrEvent.QuizStart -> startQuiz(s)
+                is XrEvent.TabPicked ->
+                    when (e.tab) {
+                        Tab.SETTINGS -> s.copy(popup = Popup.SETTINGS, confirmClear = false, confirmExit = false, menuOpen = false)
+                        Tab.EXPLORE -> modeChanged(s.copy(popup = Popup.NONE, confirmClear = false, confirmExit = false), Mode.EXPLORE)
+                        Tab.QUIZ -> modeChanged(s.copy(popup = Popup.NONE, confirmClear = false, confirmExit = false), Mode.QUIZ)
+                    }
+                // D44: a quiz under way is not thrown away by one stray [Start]: confirm first
+                XrEvent.QuizStart -> if (s.quizUnderWay) s.copy(confirmRestart = true) else startQuiz(s)
+                XrEvent.QuizRestartConfirm -> startQuiz(s)
+                XrEvent.QuizRestartCancel -> s.copy(confirmRestart = false)
                 is XrEvent.QuizOption -> answer(s, e.boneId)
                 XrEvent.ReviewWrong -> if (s.quiz.wrong.isEmpty()) s else s.copy(quiz = s.quiz.copy(phase = QuizPhase.REVIEW, reviewIndex = 0))
                 XrEvent.ReviewNext -> {
@@ -102,8 +118,15 @@ class XrViewModel(
                     if (n >= s.quiz.wrong.size) s.copy(quiz = s.quiz.copy(phase = QuizPhase.RESULT)) else s.copy(quiz = s.quiz.copy(reviewIndex = n))
                 }
                 XrEvent.BackToResult -> s.copy(quiz = s.quiz.copy(phase = QuizPhase.RESULT))
-                XrEvent.SettingsOpen -> s.copy(popup = Popup.SETTINGS, confirmClear = false, menuOpen = false)
-                XrEvent.SettingsClose -> s.copy(popup = Popup.NONE, confirmClear = false)
+                XrEvent.SettingsOpen -> s.copy(popup = Popup.SETTINGS, confirmClear = false, confirmExit = false, menuOpen = false)
+                XrEvent.SettingsClose -> s.copy(popup = Popup.NONE, confirmClear = false, confirmExit = false)
+                XrEvent.ExitAsk -> s.copy(confirmExit = true, confirmClear = false)
+                XrEvent.ExitCancel -> s.copy(confirmExit = false)
+                XrEvent.ExitConfirm -> {
+                    XrLog.i("EXIT confirmed")
+                    onExit?.invoke()
+                    s.copy(confirmExit = false)
+                }
                 is XrEvent.LangPicked -> s.copy(prefs = s.prefs.copy(lang = e.lang))
                 is XrEvent.LookPicked -> s.copy(prefs = s.prefs.copy(look = e.look))
                 XrEvent.ClearAsk -> s.copy(confirmClear = true)
@@ -196,6 +219,8 @@ class XrViewModel(
 
     private fun modeChanged(s: XrUiState, m: Mode): XrUiState {
         if (m == s.mode) return s
+        // v0.1.4: the quiz is a tab; leaving it mid-run keeps the run (D44: progress is never lost by a tab switch)
+        if (s.quizUnderWay) return if (m == Mode.QUIZ) s.copy(mode = m, selected = null, group = null, follow = null) else s.copy(mode = m)
         feedbackJob?.cancel()
         return if (m == Mode.QUIZ) s.copy(mode = m, selected = null, group = null, follow = null, quiz = QuizState()) else s.copy(mode = m, quiz = QuizState())
     }
@@ -205,7 +230,8 @@ class XrViewModel(
         nextSeed = null
         val qs = QuizMaker.make(catalog, seed)
         XrLog.i("QUIZ start seed=$seed questions=${qs.joinToString(" ") { "${it.kind.name.first()}:${it.boneId}" }}")
-        return s.copy(mode = Mode.QUIZ, selected = null, group = null, follow = null, quiz = QuizState(questions = qs, phase = QuizPhase.ASKING, seed = seed))
+        feedbackJob?.cancel()
+        return s.copy(mode = Mode.QUIZ, popup = Popup.NONE, confirmRestart = false, selected = null, group = null, follow = null, quiz = QuizState(questions = qs, phase = QuizPhase.ASKING, seed = seed))
     }
 
     /** Debug: a quiz with this seed, at its first question of [kind] (null: the first question). */
@@ -285,13 +311,19 @@ class XrViewModel(
         super.onCleared()
     }
 
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            XrViewModel(XrGraph.catalog(context), XrGraph.prefs(context), XrGraph.speaker(context), Device.onEmulator) as T
-    }
-
     companion object {
+        @Volatile private var instance: XrViewModel? = null
+
+        /**
+         * v0.1.4 (factory native-window-move §3.4): one per process, shared by the Stage and the system window (a
+         * container's own viewModel() would end with that container).
+         */
+        fun shared(context: Context): XrViewModel =
+            instance ?: synchronized(this) {
+                instance ?: XrViewModel(XrGraph.catalog(context), XrGraph.prefs(context), XrGraph.speaker(context), Device.onEmulator).also { instance = it }
+            }
+
+
         val ACCEPTED_KINDS = setOf("GazePinch", "RayBasedPinch", "Pointer")
         const val SELF_PINCH = 0.6f
         const val FEEDBACK_MS = 1500L

@@ -245,9 +245,6 @@ internal class BoneMaterials(private val shared: SharedResources) {
             }
         )
 
-    /** The panel's drag bar: light, a little see-through. */
-    val handle: Material = sheer(XrColors.White, 0.7f)
-
     /** The floor marker (x-ray cyan) and the ghost ring that follows the controller ray while placing. */
     val marker: Material = sheer(XrColors.XrayCyan, 0.9f)
     val ghost: Material = sheer(XrColors.XrayCyan, 0.45f)
@@ -352,50 +349,6 @@ internal class Part(parent: Entity, mesh: MeshResource, material: Material, name
 
     fun destroy() {
         runCatching { entity.destroy(true) }
-    }
-}
-
-/**
- * The main panel's drag bar (profile D21): a pill under the panel that the controller ray or gaze + pinch grabs; the
- * system drag on it moves the panel. It carries its own collider and the system hover highlight.
- */
-internal class PanelHandle(parent: Entity, mesh: MeshResource, material: Material) {
-    /** Unscaled: collider (metres), interaction and hover live here; the bar mesh is a scaled child (as the bones). */
-    val entity: Entity = Entity().named("panel:handle")
-    private val bar: Entity = ModelEntity(mesh, material).named("panel:handle:bar")
-    private var on = true
-
-    init {
-        entity.components.set(boxCollision(Vec3(WIDTH_M + 0.03f, HEIGHT_M + 0.025f, 0.02f)))
-        entity.components.set(com.pico.spatial.core.ecs.InteractableComponent())
-        runCatching { entity.components.set(com.pico.spatial.core.ecs.HoverEffectComponent()) }
-        parent.addChild(entity)
-        entity.addChild(bar)
-        bar.setLocal(scale = Vec3(WIDTH_M, HEIGHT_M, 1f))
-    }
-
-    fun place(center: Vec3, rotation: Quat4) {
-        entity.setLocal(position = center, rotation = rotation)
-        if (!on) {
-            entity.enabled = true
-            on = true
-        }
-    }
-
-    fun hide() {
-        if (on) {
-            entity.enabled = false
-            on = false
-        }
-    }
-
-    fun destroy() {
-        runCatching { entity.destroy(true) }
-    }
-
-    companion object {
-        const val WIDTH_M = 0.16f
-        const val HEIGHT_M = 0.022f
     }
 }
 

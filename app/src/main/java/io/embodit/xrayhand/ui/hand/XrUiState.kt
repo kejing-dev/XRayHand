@@ -19,6 +19,9 @@ enum class HandId { LEFT, RIGHT, DEMO }
 
 enum class Popup { NONE, SETTINGS }
 
+/** Pages of the system window, switched by the SpatialUI TabBar (D8); settings is last (D26). */
+enum class Tab { EXPLORE, QUIZ, SETTINGS }
+
 enum class QuizPhase { INTRO, ASKING, FEEDBACK, RESULT, REVIEW }
 
 data class Selection(val hand: HandId, val boneId: String)
@@ -65,8 +68,10 @@ data class XrUiState(
     val menuOpen: Boolean = false,
     /** Bumped by "move to the marker" (profile D1): the only thing that moves the demo hand's anchor. */
     val demoPlaceTick: Int = 0,
-    /** Bumped by "call the panel back" (profile D21): the scene re-places the main panel in front. */
-    val panelRecallTick: Int = 0,
+    /** Settings > Exit asks in the page first (D26). */
+    val confirmExit: Boolean = false,
+    /** [Start] while a quiz is under way asks first (D44). */
+    val confirmRestart: Boolean = false,
     /** Marker placing mode: the floor takes a pinch / trigger and puts the marker there. */
     val placing: Boolean = false,
     /** A marker is on the floor (session-wide, kept by the scene). */
@@ -80,6 +85,13 @@ data class XrUiState(
 
     val quizActive: Boolean
         get() = mode == Mode.QUIZ && quiz.phase != QuizPhase.INTRO
+
+    /** A quiz run that has questions left to answer (kept across tab switches, confirmed before a restart). */
+    val quizUnderWay: Boolean
+        get() = quiz.phase == QuizPhase.ASKING || quiz.phase == QuizPhase.FEEDBACK
+
+    val tab: Tab
+        get() = if (popup == Popup.SETTINGS) Tab.SETTINGS else if (mode == Mode.QUIZ) Tab.QUIZ else Tab.EXPLORE
 
     /** The carpals are drawn 1.5x and spread: the switch, a carpal group focus or a carpal question (design `spatialLayout.carpalZoom`). */
     val carpalZoomOn: Boolean
@@ -123,7 +135,7 @@ sealed interface XrEvent {
     /** The scene put the marker on the floor (from a pinch / trigger on the floor while placing). */
     data object MarkerPlaced : XrEvent
 
-    /** Menu "call the panel back in front of me" (D21). */
+    /** Menu / settings "重新打开面板": the system window closes and opens again (D21 / D44). */
     data object RecallPanel : XrEvent
 
     /** Panel / menu "move to the marker". */
@@ -139,6 +151,12 @@ sealed interface XrEvent {
     data object FollowEnd : XrEvent
     data class DemoPose(val pose: PoseName) : XrEvent
     data class ModeChanged(val mode: Mode) : XrEvent
+    data class TabPicked(val tab: Tab) : XrEvent
+    data object QuizRestartConfirm : XrEvent
+    data object QuizRestartCancel : XrEvent
+    data object ExitAsk : XrEvent
+    data object ExitCancel : XrEvent
+    data object ExitConfirm : XrEvent
     data object QuizStart : XrEvent
     data class QuizOption(val boneId: String) : XrEvent
     data object ReviewWrong : XrEvent

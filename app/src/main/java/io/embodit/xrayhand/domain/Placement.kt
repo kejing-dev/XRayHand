@@ -37,6 +37,18 @@ object Placement {
         return Vec3(viewer.x + dir.x * dist, panel.y, viewer.z + dir.z * dist)
     }
 
+    /** v0.1.4 parking spot: right of the system window, nearer than it, under the line of sight it opened on. */
+    const val PARK_SIDE_DEG = 28f
+    const val PARK_DOWN_DEG = 12f
+    const val PARK_M = 0.85f
+
+    /**
+     * Parking spot before the first marker, from the head the system window was opened in front of ([Upright.window]):
+     * [PARK_SIDE_DEG] to the right of its yaw, [PARK_DOWN_DEG] below the horizon, [PARK_M] away; head pitch and roll
+     * play no part (D9). The window spans about 15 degrees each side (+ 7 for the hand) of its centre, so the hand stays clear of it (D20).
+     */
+    fun parkBeside(head: HeadPose): Vec3 = Upright.place(head, -PARK_SIDE_DEG, PARK_DOWN_DEG, PARK_M).position
+
     /** Pushes [c] out to [CLEAR_M] horizontally from [head] (D14), keeping its height. */
     fun keepClear(c: Vec3, head: Vec3, fallbackDir: P2): Vec3 {
         val flat = P2.of(c - head)

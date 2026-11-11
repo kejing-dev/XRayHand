@@ -42,20 +42,18 @@ data class PanelFacing(val yaw: Float, val pitch: Float) {
 }
 
 /**
- * Facing rule for panels that stand in the room (Spatial Ruler): turn about the vertical towards the
- * head, then pitch towards it (clamped to 60 degrees), never roll. Straight above or below, the last
- * yaw is kept.
+ * Facing rule for panels that stand in the room: turn about the vertical towards the head, never pitch, never roll
+ * (D9, v0.1.4: the v0.1.3 pitch towards the head made the main panel lean back, "斜着向下"). Straight above or below,
+ * the last yaw is kept.
  */
 object FacePanel {
-    private const val MAX_PITCH_RAD = 1.0471976f
     private const val KEEP_YAW_WITHIN_M = 0.1f
 
     fun facing(panel: Vec3, head: Vec3, lastYaw: Float?): PanelFacing {
         val to = head - panel
         val flat = hypot(to.x, to.z)
         val yaw = if (flat < KEEP_YAW_WITHIN_M && lastYaw != null) lastYaw else if (flat < 1e-4f) 0f else atan2(to.x, to.z)
-        val pitch = atan2(to.y, flat).coerceIn(-MAX_PITCH_RAD, MAX_PITCH_RAD)
-        return PanelFacing(yaw, pitch)
+        return PanelFacing(yaw, 0f)
     }
 }
 

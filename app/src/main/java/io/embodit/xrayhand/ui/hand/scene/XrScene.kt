@@ -22,19 +22,18 @@ import io.embodit.xrayhand.domain.BoneCatalog
 import io.embodit.xrayhand.domain.BonePose
 import io.embodit.xrayhand.domain.BoneSolver
 import io.embodit.xrayhand.domain.DemoPoses
-import io.embodit.xrayhand.domain.FacePanel
 import io.embodit.xrayhand.domain.Group
 import io.embodit.xrayhand.domain.HandJoints
 import io.embodit.xrayhand.domain.HandRig
 import io.embodit.xrayhand.domain.HeadPose
 import io.embodit.xrayhand.domain.Joint
 import io.embodit.xrayhand.domain.P2
-import io.embodit.xrayhand.domain.PanelRest
 import io.embodit.xrayhand.domain.Placement
 import io.embodit.xrayhand.domain.PoseName
 import io.embodit.xrayhand.domain.PoseParams
 import io.embodit.xrayhand.domain.QuestionKind
 import io.embodit.xrayhand.domain.Quat4
+import io.embodit.xrayhand.domain.Upright
 import io.embodit.xrayhand.domain.Vec3
 import io.embodit.xrayhand.domain.placed
 import io.embodit.xrayhand.platform.Lang
@@ -44,13 +43,13 @@ import io.embodit.xrayhand.platform.XrLog
 import io.embodit.xrayhand.platform.tracking.Device
 import io.embodit.xrayhand.ui.hand.HandId
 import io.embodit.xrayhand.ui.hand.Mode
-import io.embodit.xrayhand.ui.hand.Popup
 import io.embodit.xrayhand.ui.hand.QuizPhase
 import io.embodit.xrayhand.ui.hand.Source
 import io.embodit.xrayhand.ui.hand.XrEvent
 import io.embodit.xrayhand.ui.hand.XrUiState
 import io.embodit.xrayhand.ui.hand.components.PanelSizes
 import io.embodit.xrayhand.ui.theme.XrColors
+import io.embodit.xrayhand.ui.window.WindowCtl
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -95,9 +94,9 @@ class XrFrameSystem : System() {
 
 /** Ids of the attachment panels; the Compose side declares exactly these, once. */
 object PanelIds {
-    const val MAIN = "main"
-    const val SETTINGS = "settings"
-    val pool: List<String> = listOf(MAIN, SETTINGS)
+    /** v0.1.4: the Stage's one chip, "打开面板" / "平视前方"; the main panel is the system window (D21). */
+    const val OPEN = "open"
+    val pool: List<String> = listOf(OPEN)
 }
 
 /** The few words the scene draws itself (phalanx group labels), in both languages. */
@@ -105,7 +104,8 @@ data class SceneStrings(val proximal: String, val middle: String, val distal: St
 
 /**
  * The 3D side: the bones on the two real hands and on the demo hand, their looks and labels, the pinch targets, the
- * demo hand's placing / turning / dragging, and the two panels.
+ * demo hand's placing / turning / dragging, and the "打开面板 / 平视前方" chip. The 2D panel is the system window
+ * ([io.embodit.xrayhand.ui.window.XrWindow], v0.1.4): this class only steps its level gate and keeps out of its way.
  *
  * Rules (Spatial Ruler / Light Planner): one calibrated stage root; Compose state comes in through [render]
  * (idempotent); per-frame work is in [onFrame] and never goes through Compose (joints are read from the provider
@@ -206,13 +206,11 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
     private var solveCount = 0
     private val recorded = HashSet<String>()
 
-    // D21: the main panel is put down once (facing the user) and stays; a drag bar moves it, "call back" re-places it
-    private var mainPlaced = false
-    private var recallApplied = 0
-    private var handle: PanelHandle? = null
-    private var panelDrag: Vec3? = null
-    private var panelDragSum = Vec3.ZERO
-    private var lastPopupShown = false
+    // v0.1.4: the system window (D21) and the Stage chip; the window's pose is estimated where the system opened it
+    private var windowHead: HeadPose? = null
+    private var windowEpoch = -1
+    private var attachedMs = 0L
+    private var chipWhat = ""
 
     // =========================================================================================
     // lifecycle
@@ -239,8 +237,8 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         XrLog.i("STAGE root offset=${XrLog.pos(offset.domain())}")
         val r = PanelRig(root) { id, shown -> panelShown[id] = shown }
         panelRig = r
-        r.world(PanelIds.MAIN, PanelSizes.MAIN_W, PanelSizes.MAIN_H, PANEL_SCALE)
-        r.world(PanelIds.SETTINGS, PanelSizes.SETTINGS_W, PanelSizes.SETTINGS_H, PANEL_SCALE)
+        r.world(PanelIds.OPEN, PanelSizes.CHIP_W, PanelSizes.CHIP_H, PANEL_SCALE)
+        attachedMs = t0
         head.start()
         stick.start()
         ActiveScene.scene = this
@@ -310,7 +308,6 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         markerRing = Part(root, k.ring, m.marker, "marker:ring").also { it.show(false) }
         markerDot = Part(root, k.disc, m.marker, "marker:dot").also { it.show(false) }
         ghostRing = Part(root, k.ring, m.ghost, "marker:ghost").also { it.show(false) }
-        handle = PanelHandle(root, k.quad, m.handle)
         built = true
         XrLog.i("SCENE built ms=${SystemClock.elapsedRealtime() - t0}")
         render(ui)
@@ -376,10 +373,9 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         ghostRing = null
         runCatching { floorCatcher?.destroy(true) }
         floorCatcher = null
-        handle?.destroy()
-        handle = null
-        mainPlaced = false
-        lastPopupShown = false
+        windowHead = null
+        windowEpoch = -1
+        chipWhat = ""
         groupLabels.forEach { it.destroy() }
         groupLabels.clear()
         leads.forEach { it.destroy() }
@@ -421,9 +417,6 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         if (prev.unsupported != null && state.unsupported == null) retrySupport()
         if (state.demoPose != prev.demoPose || demoTarget != state.demoPose) setDemoTarget(state.demoPose)
         if (state.prefs.lang != prev.prefs.lang) groupLabels.forEach { it.hide() }
-        val r = panelRig ?: return
-        r[PanelIds.MAIN]?.show()
-        if (state.popup != Popup.SETTINGS) r[PanelIds.SETTINGS]?.hide()
     }
 
     /** The hand provider runs only while real hands are wanted, and never on the emulator unless asked (Spatial Ruler). */
@@ -457,10 +450,13 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         if (root.scene == null || context.scene != root.scene) return
         val now = SystemClock.elapsedRealtime()
         frames++
-        head.pose()?.let {
+        val sample = head.pose()
+        sample?.let {
             pose = it
-            hasHead = it.position.length > 1e-3f
+            hasHead = Upright.valid(it)
         }
+        // D9: the system window opens only while the head is level (native-window-move §7.9)
+        WindowCtl.stepGate(now, Upright.pitchDeg(sample))
         val r = panelRig ?: return
         r.onFrame(now)
         r.stowBehind(pose)
@@ -478,7 +474,7 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
             stepLabels(now, dt)
             spikeLogs(now)
         }
-        if (hasHead) placePanels(now)
+        if (hasHead) placePanels(now) else panelRig?.get(PanelIds.OPEN)?.hide()
         r.setViewer(pose.position)
         if (now - lastLogMs > LOG_MS) {
             lastLogMs = now
@@ -624,12 +620,15 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         anchorDemo(c, Placement.palmRotation(Placement.palmYaw(c, pose.position)), "marker")
     }
 
-    /** Before the first marker: beside and beyond the main panel (>= 0.5 m farther, >= 30 degrees off), D20. */
+    /**
+     * Before the first marker: to the right of the system window, nearer than it and below the line of sight it was
+     * opened on (D20: never between the eyes and the window). Yaw only (D9). Waits for the window, at most 8 s.
+     */
     private fun park() {
-        val slot = panelRig?.get(PanelIds.MAIN) ?: return
-        if (!slot.shown || !hasHead) return
-        val c = Placement.park(pose.position, slot.position)
-        anchorDemo(c, Placement.palmRotation(Placement.palmYaw(c, pose.position)), "park")
+        if (!hasHead) return
+        val from = windowHead ?: if (SystemClock.elapsedRealtime() - attachedMs > PARK_WAIT_MS) pose else return
+        val c = Placement.parkBeside(from)
+        anchorDemo(c, Placement.palmRotation(Placement.palmYaw(c, from.position)), "park")
     }
 
     private fun anchorDemo(c: Vec3, rot: Quat4, why: String) {
@@ -640,46 +639,39 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         XrLog.i("DEMO anchor why=$why center=${XrLog.pos(c)} marker=${XrLog.pos(SessionAnchor.marker)}")
     }
 
-    /** Per frame: the demo hand fades to 30 % while it stands between the eyes and a shown panel (D20). */
+    /** Per frame: the demo hand fades to 30 % while it stands between the eyes and the system window (D20). */
     private fun stepFade() {
         val v = demo ?: return
         val c = demoCenter
+        val w = windowRect()
         var faded = false
-        if (c != null && v.visible && hasHead) {
-            val r = panelRig
-            for (id in PanelIds.pool) {
-                val slot = r?.get(id) ?: continue
-                if (!slot.shown) continue
-                val f = slot.facing
-                val w = (if (id == PanelIds.MAIN) PanelSizes.MAIN_W else PanelSizes.SETTINGS_W) * DP_M * PANEL_SCALE / 2f
-                val h = (if (id == PanelIds.MAIN) PanelSizes.MAIN_H else PanelSizes.SETTINGS_H) * DP_M * PANEL_SCALE / 2f
-                if (Placement.blocksPanel(pose.position, c, DEMO_RADIUS_M, slot.position, f.right, f.up, w, h)) faded = true
-            }
-        }
-        // the real hands (D22): every bone in the eye -> panel cone gives way to the panel behind it
+        if (c != null && v.visible && hasHead && w != null) faded = w.blocks(pose.position, c, DEMO_RADIUS_M)
+        // the real hands (D22): every bone in the eye -> window cone gives way to the window behind it
         for (hv in listOfNotNull(left, right)) {
             val poses = lastPoses[hv.id]
-            if (poses == null || !hasHead) {
+            if (poses == null || !hasHead || w == null) {
                 hv.yieldTo(emptySet())
                 continue
             }
-            val r = panelRig
-            val ids = HashSet<String>()
-            for (id in PanelIds.pool) {
-                val slot = r?.get(id) ?: continue
-                if (!slot.shown) continue
-                val f = slot.facing
-                val w = (if (id == PanelIds.MAIN) PanelSizes.MAIN_W else PanelSizes.SETTINGS_W) * DP_M * PANEL_SCALE / 2f
-                val h = (if (id == PanelIds.MAIN) PanelSizes.MAIN_H else PanelSizes.SETTINGS_H) * DP_M * PANEL_SCALE / 2f
-                for (p in poses) if (Placement.blocksPanel(pose.position, p.position, p.radius, slot.position, f.right, f.up, w, h)) ids += p.id
-            }
-            hv.yieldTo(ids)
+            hv.yieldTo(poses.filter { p -> w.blocks(pose.position, p.position, p.radius) }.map { it.id }.toHashSet())
         }
         if (faded != demoFaded) {
             demoFaded = faded
             XrLog.i("DEMO fade=${if (faded) Placement.FADED else 1f}")
         }
         v.fade(if (faded) Placement.FADED else 1f)
+    }
+
+    /** The window as the system drew it (estimated, [Upright.window]) while it is open; null while it is closed. */
+    private fun windowRect(): WindowRect? {
+        val h = windowHead ?: return null
+        if (!WindowCtl.open) return null
+        val p = Upright.window(h)
+        return WindowRect(p.position, p.facing.right, p.facing.up, PanelSizes.WINDOW_W * Upright.WINDOW_DP_M / 2f, PanelSizes.WINDOW_H * Upright.WINDOW_DP_M / 2f)
+    }
+
+    private class WindowRect(val center: Vec3, val right: Vec3, val up: Vec3, val halfW: Float, val halfH: Float) {
+        fun blocks(eye: Vec3, p: Vec3, radius: Float) = Placement.blocksPanel(eye, p, radius, center, right, up, halfW, halfH)
     }
 
     /** Hand root axes: fingers up, palm (+Z) towards [viewer] horizontally, thumb side X = Y x Z. */
@@ -754,12 +746,12 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
 
     // ---- looks ------------------------------------------------------------------------------------
 
-    /** The hand the quiz flashes on: the demo hand, else of the tracked ones the one nearer to the main panel. */
+    /** The hand the quiz flashes on: the demo hand, else of the tracked ones the one nearer to the window. */
     private fun activeHand(): HandId? {
         if (ui.source == Source.DEMO) return HandId.DEMO
         val tracked = listOf(HandId.LEFT, HandId.RIGHT).filter { lastPoses.containsKey(it) }
         if (tracked.size <= 1) return tracked.firstOrNull()
-        val panel = panelRig?.get(PanelIds.MAIN)?.position ?: return HandId.RIGHT
+        val panel = windowHead?.let { Upright.window(it).position } ?: return HandId.RIGHT
         return tracked.minByOrNull { id -> lastJoints[id]?.get(Joint.PALM)?.distanceTo(panel) ?: 9f }
     }
 
@@ -925,39 +917,37 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
     // =========================================================================================
 
     /**
-     * Profile D21: the main panel is put down once in front of the user (24 degrees left, 15 down, 0.8 m, facing them)
-     * and then stays locked in the room; it turns towards the user only when it is put somewhere (placed, dragged,
-     * called back). The settings popup is put in front of it when it opens.
+     * v0.1.4: the window is estimated where the system opened it (each ON_CREATE, from the head at that moment: it opened
+     * because the head was level). The Stage's chip shows "平视前方" while an open waits for a level head (on the line of
+     * sight, pitch clamped to 40 degrees, re-posed every frame) and "打开面板" while the window is closed or minimised
+     * (15 degrees under the horizon, 0.9 m, put down once). Both stand upright, yaw only (D9).
      */
     private fun placePanels(now: Long) {
-        val r = panelRig ?: return
-        val mainSlot = r[PanelIds.MAIN] ?: return
-        if (!mainPlaced) {
-            mainPlaced = true
-            val p = PanelRest.at(pose, MAIN_LEFT_DEG, -MAIN_DOWN_DEG, MAIN_M)
-            mainSlot.show(at = p)
-            XrLog.i("PANEL main placed pos=${XrLog.pos(p)}")
-        }
-        if (ui.panelRecallTick != recallApplied) {
-            recallApplied = ui.panelRecallTick
-            val p = PanelRest.at(pose, 0f, -RECALL_DOWN_DEG, RECALL_M)
-            mainSlot.show(at = p)
-            XrLog.i("PANEL main recalled pos=${XrLog.pos(p)}")
-        }
-        val popup = ui.popup == Popup.SETTINGS
-        if (popup && !lastPopupShown) {
-            // over the main panel, nearer to the viewer: a popup on it, never behind it (profile D8)
-            r[PanelIds.SETTINGS]?.show(mainSlot.position + mainSlot.facing.normal * POPUP_FRONT_M)
-        }
-        lastPopupShown = popup
-        handle?.let { h ->
-            if (mainSlot.shown) {
-                val f = mainSlot.facing
-                val half = PanelSizes.MAIN_H * DP_M * PANEL_SCALE / 2f
-                h.place(mainSlot.position - f.up * (half + HANDLE_GAP_M) + f.normal * 0.005f, f.rotation)
-            } else {
-                h.hide()
+        if (WindowCtl.createdEpoch != windowEpoch) {
+            windowEpoch = WindowCtl.createdEpoch
+            if (windowEpoch > 0) {
+                windowHead = pose
+                XrLog.i("WINDOW est pos=${XrLog.pos(Upright.window(pose).position)} pitch=${"%.1f".format(Locale.US, Upright.pitchDeg(pose) ?: Float.NaN)}")
             }
+        }
+        val slot = panelRig?.get(PanelIds.OPEN) ?: return
+        val what =
+            when {
+                WindowCtl.levelHint -> "level"
+                ui.loaded && WindowCtl.chipWanted(now) -> "open"
+                else -> ""
+            }
+        if (what != chipWhat) {
+            chipWhat = what
+            XrLog.i("CHIP ${what.ifEmpty { "none" }} pitch=${"%.1f".format(Locale.US, Upright.pitchDeg(pose) ?: Float.NaN)} window=${WindowCtl.panelState}")
+            when (what) {
+                "" -> slot.hide()
+                "open" -> slot.show(at = Upright.chip(pose).position)
+            }
+        }
+        if (what == "level") {
+            val down = (-(Upright.pitchDeg(pose) ?: 0f)).coerceIn(-LEVEL_HINT_MAX_DEG, LEVEL_HINT_MAX_DEG)
+            slot.show(at = Upright.place(pose, 0f, down, Upright.CHIP_M).position)
         }
     }
 
@@ -966,7 +956,7 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
         lastPanelPressMs = SystemClock.elapsedRealtime()
     }
 
-    /** Debug `recenter`: same as the menu's "call the panel back". */
+    /** Debug `recenter`: same as the menu's "重新打开面板". */
     fun recenter() {
         sink(XrEvent.RecallPanel)
     }
@@ -1010,7 +1000,6 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
     }
 
     fun onSpatialDrag(phase: String, start: Offset3D?, value: SpatialDragValue) {
-        if (dragPanel(phase, value)) return
         val hit = boneAt(value.targetEntity)
         when (phase) {
             "start" -> {
@@ -1035,41 +1024,6 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
                 dragging = false
             }
         }
-    }
-
-    /** D21: a drag on the bar moves the main panel; it faces the user wherever it is let go. */
-    private fun dragPanel(phase: String, value: SpatialDragValue): Boolean {
-        val slot = panelRig?.get(PanelIds.MAIN) ?: return false
-        when (phase) {
-            "start" -> {
-                val h = handle ?: return false
-                if (value.targetEntity !== h.entity) return false
-                panelDrag = slot.position
-                panelDragSum = Vec3.ZERO
-                XrLog.i("PANEL drag start kind=${value.interactionKind.name} pos=${XrLog.pos(slot.position)}")
-                return true
-            }
-            "move" -> {
-                val s0 = panelDrag ?: return false
-                val d = value.dragAmount
-                handDelta(Vec3(d.x, d.y, d.z))?.let { panelDragSum = panelDragSum + it }
-                slot.moveTo(s0 + panelDragSum)
-                return true
-            }
-            else -> {
-                if (panelDrag == null) return false
-                panelDrag = null
-                XrLog.i("PANEL drag end pos=${XrLog.pos(slot.position)} moved=${XrLog.pos(panelDragSum)}")
-                return true
-            }
-        }
-    }
-
-    /** Debug `paneldrag dx dy dz`: as a drag on the bar. */
-    fun debugPanelDrag(dx: Float, dy: Float, dz: Float): String {
-        val slot = panelRig?.get(PanelIds.MAIN) ?: return "no panel"
-        slot.moveTo(slot.position + Vec3(dx, dy, dz))
-        return "panel pos=${XrLog.pos(slot.position)} handle=${handle != null}"
     }
 
     private fun handDelta(px: Vec3): Vec3? {
@@ -1252,16 +1206,11 @@ class XrScene(private val context: Context, private val sink: (XrEvent) -> Unit)
     fun lastJointsOf(right: Boolean): HandJoints? = lastJoints[if (right) HandId.RIGHT else HandId.LEFT]
 
     companion object {
-        const val MAIN_LEFT_DEG = 24f
-        const val MAIN_DOWN_DEG = 15f
-        const val MAIN_M = 0.8f
         const val PANEL_SCALE = 1f
-        const val POPUP_FRONT_M = 0.04f
         const val KEY_HOLD_MS = 600L
-        const val RECALL_DOWN_DEG = 15f
-        const val RECALL_M = 0.9f
-        const val HANDLE_GAP_M = 0.03f
         const val LOG_MS = 5000L
+        const val PARK_WAIT_MS = 8000L
+        const val LEVEL_HINT_MAX_DEG = 40f
         const val SLOW_FRAME_MS = 60L
         const val TRACK_DEBOUNCE_MS = 1000L
         const val SUPPORT_GRACE_MS = 3000L

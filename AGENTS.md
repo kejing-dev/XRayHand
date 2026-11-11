@@ -88,7 +88,8 @@ tools/shot.sh NAME '<command>' ...    (commands, settle, console screenshot -> .
 `quiz finish <score>` · `feedback hold|auto` · `next` · `review` · `settings open|close` · `lang zh|en|both` ·
 `look ivory|xray` · `mute on|off` · `clear` · `menu` · `support unsupported|<STATE>|ok` · `stick <x> [ms]` ·
 `drag <dx> <dy> <dz>` · `marker <x> <z>` · `placing` · `bring` · `recenter` · `welcome reset` · `dump bones` · `dump pose <name>` · `panels` ·
-`labels` · `headpose` (includes demo hand centre and yaw) · `bounds`.
+`labels` · `headpose` (includes demo hand centre and yaw) · `bounds` · v0.1.4: `tab explore|quiz|settings` · `exit [yes|no]` ·
+`start` · `recall` · `window` · `fit [reset]`.
 
 Log prefixes (tag `XrayHand`): STATE, CMD, TAP (raw / ignored kind= / ignored self-pinch / kind=...ignored=no), SPEAK,
 QUIZ, HANDS, TRACK, LIMBS, MODEL, DEMO, DRAG, STICK, FOLLOW, BONES, POSE, JITTER, FRAME (bones_us = solve + write time).
@@ -98,7 +99,7 @@ QUIZ, HANDS, TRACK, LIMBS, MODEL, DEMO, DRAG, STICK, FOLLOW, BONES, POSE, JITTER
 S00 launch + 1 s · S01 `welcome reset` then relaunch (or `state S01`) · S02 `state S02` (+2 s) · S03 `state S03` (+2 s) ·
 S04 harness `move` onto a demo bone (system hover) · S05 `state S05` · S06 `state S06` · S07 `state S07` (+2 s) ·
 S08 `state S08` · S09 `state S09` (+2 s) · S10 `state S10` · S11 `state S11` · S12 `state S12` · S13 `state S13`
-(feedback held; `feedback auto` after) · S14 `state S14` · S15 `state S15` · S16 `state S16`, then `lang en` ·
+(feedback held; `feedback auto` after) · S14 `state S14` · S15 `state S15` · S16 `tab settings`, then `lang en` ·
 S17 `state S17` (+5 s: hands seen, then lost) · S18 `state S18` (`support ok` after). Demo poses: `demopose fist|pinch|flip`.
 Turning: `tools/turn.sh 90 0` (camera rotation button on); the demo hand stays at its anchor. Current evidence:
 `../spatial-app-factory/apps/xray-hand/build/` (first-screen, launcher, states/).
@@ -117,20 +118,31 @@ Turning: `tools/turn.sh 90 0` (camera rotation button on); the demo hand stays a
 - Grep gate and the reason for every head-pose use: `../spatial-app-factory/apps/xray-hand/build/ui-audit.md` (top).
 - Debug: `marker <x> <z>` (as if the floor were pinched there), `placing`, `bring`; `front` is gone.
 
-## Panel and eye + hand (v0.1.3, taste profile D21 / D22)
+## System window, level gate and eye + hand (v0.1.4, taste profile D8 / D9 / D21 / D22 / D26 / D44)
 
-- The main panel is put down once (24 degrees left, 15 down, 0.8 m, facing the user) and then stays locked in the room:
-  no lazy follow, no per-frame turning (`PanelRig.setViewer` only records the viewer; a panel turns to the user
-  when it is placed, dragged or called back). A white drag bar under the panel (`panel:handle`, its own collider +
-  hover) moves it with a system drag (`PANEL drag start/end`). The ⋯ menu "Bring the panel in front of me" re-places it
-  straight ahead, 15 degrees down, 0.9 m (`PANEL main recalled`). Debug: `recall`, `paneldrag dx dy dz`.
-- Eye + hand: panel controls are clicked by the system's gaze + pinch (controller ray when there is no eye tracking);
-  every control carries `spatialHoverEffect`. Real-hand bones that stand between the eyes and a shown panel take no
-  pinches (`HAND left yield=n`), so looking at a control behind your own hand and pinching clicks the control; a pinch
-  while looking at a bone names the bone; a pinch while looking at nothing does nothing.
-- Emulator: `tools/harness/emu_mode.ps1 -Mode eye -Avd PICO_6_1_Factory4 -Serial emulator-5566` switches to Eye Gesture
-  Mode, but can leave its drop-down menu open; then `emu.sh fast on` never reaches 50 fps and every click is refused.
-  Check `emu.sh wins | grep Popup` and post Esc to that window (or invoke the mode again).
+- All 2D content is ONE system Planar window (`Main.kt` `WindowContainer(PANEL_ID = "XrayWindow")`, 520 x 500 dp,
+  `ui/window/XrWindow.kt`). Pages 认骨 / 测验 / 设置 are switched by the SpatialUI `TabBar` (icons; the labels are taken
+  in the app's language before they reach the TabBar). The system moves / closes / minimises the window (the dot
+  under it); there is no drag code for it any more. The Stage and the window share `XrViewModel.shared(...)`.
+- D9 ("UI 菜单一打开就斜着向下", headset v0.1.3): the system opens a window square to the line of sight, head pitch
+  included, and nothing can re-level it; so every open (first, chip, "重新打开面板") goes through `WindowCtl` + `LevelGate`:
+  the head must be within ±10 degrees of level for 300 ms (log `LEVEL ok` / `LEVEL hint=true`). Meanwhile the Stage's
+  one chip shows "平视前方 / 面板就出来" upright on the line of sight. `Upright.place` (yaw only) places the chip; `FacePanel`
+  is yaw-only. Root cause and the per-use table: `../spatial-app-factory/apps/xray-hand/build/headpose-audit.md`.
+- System x on the window → the chip "打开面板" (15 degrees down, 0.9 m, upright). Settings "重新打开面板" closes the
+  window and opens it again after ON_DESTROY, through the level gate (D44: no promise of "in front of you").
+- Settings: language, look, 重新打开面板, clear records (confirm row), about, 退出应用 with a confirm row at the bottom
+  (first screen). Exit releases the scene, closes the window and the Stage, finishes every task, ends the process.
+- Quiz: switching tabs keeps a run; [重新开始] during a run asks "放弃这一轮，重新出题？" first.
+- The demo hand parks right of the window (28 degrees, 12 down, 0.85 m from the head the window opened from); it and
+  real-hand bones in the eye -> window cone fade / take no pinches (D20 / D22), estimated from `Upright.window`.
+- Eye + hand: the window is the system's, so gaze + pinch and the controller ray click it natively; bones still take
+  gaze / ray pinches only (`ACCEPTED_KINDS`), real-hand bones in front of the window yield.
+- Debug (same events as the buttons): `tab explore|quiz|settings` · `exit [yes|no]` · `start` · `recall` · `window` ·
+  `fit [reset]` (text-overflow summary, `OVERFLOW` lines). `paneldrag` and `settings open` popups are gone (`settings
+  open` = the settings tab).
+- Emulator: `adb shell input tap X Y` in window px (dp x 2) clicks window controls for real; screenshots with
+  `low-vision/tools/harness/emu.ps1 capwin <main hwnd> out.png -Avd <avd>` (adb screencap tears after a window opens).
 
 ## Rules kept
 

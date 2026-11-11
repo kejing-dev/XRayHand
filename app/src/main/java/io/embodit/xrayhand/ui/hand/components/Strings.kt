@@ -70,11 +70,14 @@ fun groupName(g: Group): String =
 fun sceneStrings(r: Resources): SceneStrings =
     SceneStrings(r.getString(R.string.label_proximal), r.getString(R.string.label_middle), r.getString(R.string.label_distal), r.getString(R.string.label_thumb_two))
 
-/** Panel sizes in dp (design `panels`: 400 dp wide main panel at 0.8 m, 1 dp = 0.8 mm). */
+/**
+ * Sizes in dp. v0.1.4: the 2D panel is the system window ([WINDOW_W] x [WINDOW_H], sized for the longest page, the
+ * settings page with [Exit] on the first screen, D16 / D26); the Stage keeps only the chip ([CHIP_W] x [CHIP_H]).
+ */
 object PanelSizes {
-    const val MAIN_W = 440f
-    const val MAIN_H = 476f
-    const val SETTINGS_W = 380f
-    const val SETTINGS_H = 380f
+    const val WINDOW_W = 520f
+    const val WINDOW_H = 500f
+    const val CHIP_W = 300f
+    const val CHIP_H = 120f
     const val DISABLED_ALPHA = 0.4f
 }

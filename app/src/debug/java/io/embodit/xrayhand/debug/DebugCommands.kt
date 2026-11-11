@@ -11,6 +11,9 @@ import io.embodit.xrayhand.platform.XrLog
 import io.embodit.xrayhand.ui.hand.HandId
 import io.embodit.xrayhand.ui.hand.Mode
 import io.embodit.xrayhand.ui.hand.Source
+import io.embodit.xrayhand.ui.hand.Tab
+import io.embodit.xrayhand.ui.hand.components.TextFit
+import io.embodit.xrayhand.ui.window.WindowCtl
 import io.embodit.xrayhand.ui.hand.XrEvent
 import io.embodit.xrayhand.ui.hand.debug.Probe
 
@@ -31,7 +34,8 @@ import io.embodit.xrayhand.ui.hand.debug.Probe
  *   group carpal|metacarpal|phalanx|none
  *   zoom on|off · follow 1-3|off · mode explore|quiz · quiz seed <n> [identify] · answer right|wrong · quiz finish <score>
  *   feedback hold|auto · next · review · settings open|close · lang zh|en|both · look ivory|xray · mute on|off · clear · menu
- *   support unsupported|<STATE>|ok · stick <x> [ms] · drag <dx> <dy> <dz> · marker <x> <z> · placing · bring · recall · paneldrag <dx> <dy> <dz> · recenter · welcome reset
+ *   support unsupported|<STATE>|ok · stick <x> [ms] · drag <dx> <dy> <dz> · marker <x> <z> · placing · bring · recall · recenter · welcome reset
+ *   tab explore|quiz|settings · exit [yes|no] · start (quiz [Start], confirms mid-run) · window · fit [reset]
  *   dump bones | dump pose <name> | panels | labels | headpose | bounds
  */
 internal object DebugCommands {
@@ -178,9 +182,26 @@ internal object DebugCommands {
                 }
                 "recall" -> {
                     vm.onEvent(XrEvent.RecallPanel)
-                    "recall tick=${vm.state.value.panelRecallTick}"
+                    "recall window=${WindowCtl.panelState}"
                 }
-                "paneldrag" -> scene.debugPanelDrag(a1?.toFloatOrNull() ?: 0f, a2?.toFloatOrNull() ?: 0f, w.getOrNull(3)?.toFloatOrNull() ?: 0f)
+                // v0.1.4: the same events as the TabBar and the settings / quiz buttons (no shortcut into the state)
+                "tab" -> {
+                    vm.onEvent(XrEvent.TabPicked(Tab.entries.firstOrNull { it.name.equals(a1, ignoreCase = true) } ?: Tab.EXPLORE))
+                    "tab=${vm.state.value.tab}"
+                }
+                "exit" -> {
+                    vm.onEvent(if (a1 == "yes") XrEvent.ExitConfirm else if (a1 == "no") XrEvent.ExitCancel else XrEvent.ExitAsk)
+                    "exit $a1 confirm=${vm.state.value.confirmExit}"
+                }
+                "start" -> {
+                    vm.onEvent(XrEvent.QuizStart)
+                    "start confirm=${vm.state.value.confirmRestart}"
+                }
+                "window" -> "window=${WindowCtl.panelState} open=${WindowCtl.open} level=${WindowCtl.levelHint}"
+                "fit" -> {
+                    if (a1 == "reset") TextFit.reset()
+                    TextFit.summary()
+                }
                 "recenter" -> {
                     scene.recenter()
                     "recenter"
@@ -208,7 +229,7 @@ internal object DebugCommands {
                 }
                 "headpose" -> scene.poseLine()
                 "bounds" -> {
-                    for (panel in listOf("main", "settings")) {
+                    for (panel in listOf("window", "open")) {
                         val size = Probe.sizeOf(panel)
                         Probe.controlsOf(panel).forEach { (n, b) -> XrLog.i("BOUNDS panel=$panel name=$n cx=${b.cx} cy=${b.cy} w=${b.w} h=${b.h} panel=${size?.first}x${size?.second}") }
                     }
@@ -226,7 +247,7 @@ internal object DebugCommands {
         val host = Probe.host ?: return "no host"
         val vm = host.viewModel()
         val scene = host.scene()
-        fun base(source: Source) = vm.debugSet { it.copy(welcome = false, popup = io.embodit.xrayhand.ui.hand.Popup.NONE, menuOpen = false, mode = Mode.EXPLORE, quiz = io.embodit.xrayhand.ui.hand.QuizState(), selected = null, group = null, follow = null, unsupported = null, source = source) }
+        fun base(source: Source) = vm.debugSet { it.copy(welcome = false, popup = io.embodit.xrayhand.ui.hand.Popup.NONE, menuOpen = false, confirmExit = false, confirmRestart = false, mode = Mode.EXPLORE, quiz = io.embodit.xrayhand.ui.hand.QuizState(), selected = null, group = null, follow = null, unsupported = null, source = source) }
         when (id.uppercase()) {
             "S01" -> run(context, "welcome reset")
             "S02" -> {

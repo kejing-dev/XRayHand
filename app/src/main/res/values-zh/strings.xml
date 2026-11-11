@@ -20,7 +20,7 @@
     <string name="menu_mine">用自己的手</string>
     <string name="menu_marker">在地上放标记</string>
     <string name="place_marker">放标记</string>
-    <string name="menu_recall">面板叫回面前</string>
+    <string name="menu_recall">重新打开面板</string>
     <string name="cancel_marker">取消</string>
     <string name="bring_to_marker">移到标记处</string>
 
@@ -90,10 +90,26 @@
     <string name="clear_yes">清除</string>
     <string name="cancel">取消</string>
     <string name="about">关于</string>
-    <string name="about_text">版本 %1$s。骨骼来自真人 CT 数据，仅供学习示意，不能用于诊断，不含籽骨。手部骨骼模型：NIH 3D 3DPX-016815，作者 My Segmenter，CC BY 4.0；Embodit 拆分、减面并重设轴向。</string>
+    <string name="about_text">版本 %1$s。骨骼来自真人 CT 数据，仅供学习示意，不能用于诊断，不含籽骨。手部骨骼模型：NIH 3D 3DPX-016815，作者 My Segmenter，CC BY 4.0；已为本应用拆分、减面并重设轴向。</string>
 
     <string name="label_proximal">近节</string>
     <string name="label_middle">中节</string>
     <string name="label_distal">远节</string>
     <string name="label_thumb_two">拇指只有两节</string>
+    <!-- v0.1.4：系统窗口（TabBar 页签、设置里退出、D9 平视门、D44 重新开始确认） -->
+    <string name="tab_explore">认骨</string>
+    <string name="tab_quiz">测验</string>
+    <string name="open_panel">打开面板</string>
+    <string name="level_hint">平视前方\n面板就出来</string>
+    <string name="recall_note">面板会关掉，再在你看的方向重新打开</string>
+    <string name="exit_app">退出应用</string>
+    <string name="exit_confirm">退出 X 光手？</string>
+    <string name="exit_yes">退出</string>
+    <string name="quiz_restart">重新开始</string>
+    <string name="restart_confirm">放弃这一轮，重新出题？</string>
+    <string name="restart_keep">继续答题</string>
+    <string name="restart_yes">重新开始</string>
+    <string name="quiz_rules">6 题在手上找骨头，4 题认出闪的那块。腕骨、掌骨、指骨都会考到。</string>
+    <string name="locate_hint">在手上找到它，看着它捏一下</string>
+    <string name="recent">最近 %1$s</string>
 </resources>
