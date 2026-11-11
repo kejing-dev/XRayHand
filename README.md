@@ -4,5 +4,6 @@
 
 | 会话 | 标题 | 行数 |
 |---|---|---|
-| `46088525` | [xray-hand] design · X 光手 | 1744 |
-| `199bc23e` | [xray-hand] build · X 光手 | 2338 |
+| `eed94f28` | Build X-ray Hand (round 3) | 1407 |
+| `d30fd7f5` | QA X-ray Hand v0.1.4 | 701 |
+| `22bc2f66` | Showcase X-ray Hand v0.1.4 (bilingual Lark) | 736 |
